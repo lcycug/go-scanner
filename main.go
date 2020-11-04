@@ -18,22 +18,28 @@ func init() {
 }
 
 func main() {
-	filePath, ok := os.LookupEnv("FILE_PATH")
-	utils.LogFatal(models.NewOk(ok, "Failed to find FILE_PATH in .env file."))
+	rootPath, ok := os.LookupEnv("ROOT_PATH")
+	utils.LogFatal(models.NewOk(ok, "Failed to find ROOT_PATH in .env file."))
 
-	fileInfos, err := ioutil.ReadDir(filePath)
+	fileInfos, err := ioutil.ReadDir(rootPath)
 	utils.LogFatal(models.NewError(err, "Failed to read directory:"))
 
 	for _, fi := range fileInfos {
 		if strings.Contains(fi.Name(), ".cls-meta.xml") {
 			continue
 		}
-		data, err := ioutil.ReadFile(path.Join(filePath, fi.Name()))
+		filepath := path.Join(rootPath, fi.Name())
+		data, err := ioutil.ReadFile(filepath)
 		utils.LogFatal(models.NewError(err, "Failed to read a file."))
 
 		dataString := string(data)
 		if !strings.Contains(dataString, "with sharing") && !strings.Contains(dataString, "without sharing") {
 			fmt.Println("This class has no explicit sharing setting", fi.Name())
 		}
+
+		err = utils.InsertSharing(filepath)
+		utils.LogFatal(models.NewError(err,
+			"Failed to insert sharing setting to a file "+filepath))
+		os.Exit(0)
 	}
 }
