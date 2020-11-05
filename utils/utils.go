@@ -2,8 +2,8 @@ package utils
 
 import (
 	"bufio"
+	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"strings"
@@ -20,6 +20,19 @@ func LogFatal(e models.Errors) {
 	case models.OK:
 		if !e.GetOk() {
 			log.Fatal(e.GetMessage())
+		}
+	}
+}
+
+func Log(e models.Errors) {
+	switch e.GetType() {
+	case models.ERROR:
+		if e.GetError() != nil {
+			fmt.Println(e.GetMessage())
+		}
+	case models.OK:
+		if !e.GetOk() {
+			fmt.Println(e.GetMessage())
 		}
 	}
 }
@@ -45,20 +58,9 @@ func File2Lines(filepath string) ([]string, error) {
 	return linesFromReader(f)
 }
 
-func InsertSharing(path string) error {
-	lines, err := File2Lines(path)
-	LogFatal(models.NewError(err, "Failed to read lines from file "+path))
-
-	fileParts := strings.Split(path, "/")
-	filename := strings.Split(fileParts[len(fileParts)-1], ".")[0]
-	for i, l := range lines {
-		if strings.Contains(l, filename) && strings.Contains(l,
-			"class") && !strings.Contains(l, "with sharing") && !strings.
-			Contains(l, "without sharing") {
-			ss := strings.Split(l, "class")
-			lines[i] = strings.Join(ss, "with sharing class")
-			break
-		}
-	}
-	return ioutil.WriteFile(path, []byte(strings.Join(lines, "\n")), 0644)
+func GetRootPathAndFileName(filePath string) (string, string) {
+	paths := strings.Split(filePath, "/")
+	rootPath := strings.Join(paths[:len(paths)-1], "/")
+	fileName := strings.Split(paths[len(paths)-1], ".")[0]
+	return rootPath, fileName
 }
